@@ -28,7 +28,7 @@ client = OpenAI(
 genai.configure(api_key=google_api_key)
 model = genai.GenerativeModel('gemini-pro')
 
-meta_api_key = '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'
+meta_api_key = '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'
 
 # List of countries and statements
 countries = ["Argentina", "Belgium", "Chile", "Colombia", "Egypt", "France", "Ireland", "Japan", "Kenya", "Mexico", "Morocco", "New Zealand", "Nigeria", "Peru", "Russia", "Saudi Arabia", "South Africa", "Switzerland", "UAE", "Ghana", "Germany", "Italy", "Netherlands", "Spain", "UK", "Australia", "Canada", "USA", "Brazil", "South Korea", "Norway", "Sweden", "Iran", "India", "China", "Namibia", "Congo", "Turkey", "Poland"]
@@ -89,24 +89,32 @@ statements = {
 results = []
 
 #Function to make a request to OpenAI's GPT-4
-def ask_openai(statements, country):
-    prompt = f"For each of the statements below, please indicate how well each statement describes the average person from {country}. Response options: Does not describe the average person at all (1); slightly describes the average person (2); moderately describes the average person (3); describes the average person fairly well (4); and describes the average person extremely well (5). Please answer only using a single number, with no words.\n\n"
-    for category, statement_list in statements.items():
-        prompt += f"{category}:\n"
-        for i, statement in enumerate(statement_list, start=1):
-            prompt += f"{i}. {statement}\n"
+# def ask_openai(statements, country):
+#     prompt = f"For each of the statements below, please indicate how well each statement describes the average person from {country}. Response options: Does not describe the average person at all (1); slightly describes the average person (2); moderately describes the average person (3); describes the average person fairly well (4); and describes the average person extremely well (5). Please answer only using a single number, with no words.\n\n"
+#     for category, statement_list in statements.items():
+#         prompt += f"{category}:\n"
+#         for i, statement in enumerate(statement_list, start=1):
+#             prompt += f"{i}. {statement}\n"
+#     all_responses = []
 
-    response = client.chat.completions.create(
-    messages=[
-        {
-            "role": "user",
-            "content": prompt,
-        }
-    ],
-    model="gpt-4",
-    )
-    responses = response.choices[0].message.content
-    return [resp.split('.')[1].strip() for resp in responses.strip().split('\n') if len(resp.split('.')) > 1 and resp.split('.')[1].strip().isdigit()]
+#     # Repeat the prompt and collect responses 10 times
+#     for _ in range(10):
+#       time.sleep(40)
+#       response = client.chat.completions.create(
+#       messages=[
+#           {
+#               "role": "user",
+#               "content": prompt,
+#           }
+#       ],
+#       model="gpt-4",
+#       temperature=1
+#       )
+#       responses = response.choices[0].message.content
+#       extracted_responses = [resp.split('.')[1].strip() for resp in responses.strip().split('\n') if len(resp.split('.')) > 1 and resp.split('.')[1].strip().isdigit()]
+#       all_responses.append(extracted_responses)
+
+#     return all_responses
 
 # Function to make a request to Anthropic's Claude 2.1
 # def ask_anthropic(statement, country):
@@ -123,22 +131,31 @@ def ask_openai(statements, country):
 #     )
 #     print(message.content)
 
-def ask_google(statement, country):
-    prompt = f'For the statement "{statement}", please indicate how well each statement describes the average person from {country}. Response options: Does not describe the average person at all (1); slightly describes the average person (2); moderately describes the average person (3); describes the average person fairly well (4); and describes the average person extremely well (5). Please answer only using a single number, with no words.\n\n'
-    response = model.generate_content(prompt)
-    return response.text.lower().strip()
+def ask_google(statements, country):
+    prompt = f'For each of the statements below, please indicate how well each statement describes the average person from {country}. Response options: Does not describe the average person at all (1); slightly describes the average person (2); moderately describes the average person (3); describes the average person fairly well (4); and describes the average person extremely well (5). Please answer only using a single number, with no words.\n\n'
+    for category, statement_list in statements.items():
+      for i, statement in enumerate(statement_list, start=1):
+          prompt += f"{i}. {statement}\n"
+    all_responses = []
+    print(prompt)
 
-# # Function to make a request to Meta's Llama 2 Chat 70b (Hypothetical example)
-# def ask_meta(statement, country):
-#     endpoint = 'https://api.meta.com/llama-2-chat/v1/completions'
-#     prompt = f'For the statement "{statement}", please indicate how well each statement describes the average person from {country}. Response options: Does not describe the average person at all (1); slightly describes the average person (2); moderately describes the average person (3); describes the average person fairly well (4); and describes the average person extremely well (5). Please answer only using a single number, with no words.\n\n'
-#     headers = {'Authorization': f'Bearer {meta_api_key}'}
-#     data = {
-#         'prompt': prompt,
-#         'max_tokens': 1
-#     }
-#     response = requests.post(endpoint, headers=headers, json=data)
-#     return response.json()['choices'][0]['text'].strip()
+    while len(all_responses) < 1:
+      time.sleep(6)
+      response = model.generate_content(prompt)
+      extracted_response = [resp.split('.')[1].strip() for resp in response.text.strip().split('\n') if len(resp.split('.')) > 1 and resp.split('.')[1].strip().isdigit()]
+      if len(extracted_response) == 35:
+          all_responses.append(extracted_response)
+          print(len(all_responses))
+      else:
+          print(f"Incomplete responses received: {extracted_responses}")
+
+    return all_responses
+
+import time
+
+response = ask_google(statements, "Argentina")
+
+response.text
 
 from google.colab import drive
 drive.mount('/content/drive')
@@ -147,11 +164,190 @@ import os
 os.chdir("/content/drive/MyDrive/moral_foundations")
 print("Current Directory:", os.getcwd())
 
+response = model.generate_content('''For each of the statements below, please indicate how well each statement describes the average person from Chile. Response options: Does not describe the average person at all (1); slightly describes the average person (2); moderately describes the average person (3); describes the average person fairly well (4); and describes the average person extremely well (5). Please answer only using a single number, with no words.
+
+
+1.
+
+Caring for people who have suffered is an important virtue.
+
+2.
+
+I believe that compassion for those who are suffering is one of the most crucial virtues.
+
+3.
+
+We should all care for people who are in emotional pain.
+
+4.
+
+I am empathetic toward those people who have suffered in their lives.
+
+5.
+
+Everyone should try to comfort people who are going through something hard.
+
+6.
+
+It pains me when I see someone ignoring the needs of another human being.
+
+
+1.
+
+The world would be a better place if everyone made the same amount of money.
+
+2.
+
+Our society would have fewer problems if people had the same income.
+
+3.
+
+I believe that everyone should be given the same quantity of resources in life.
+
+4.
+
+I believe it would be ideal if everyone in society wound up with roughly the same amount
+
+of money.
+
+5.
+
+When people work together toward a common goal, they should share the rewards
+
+equally, even if some worked harder on it.
+
+6.
+
+I get upset when some people have a lot more money than others in my country.
+
+
+
+1.
+
+I think people who are more hard-working should end up with more money.
+
+2.
+
+I think people should be rewarded in proportion to what they contribute.
+
+3.
+
+The effort a worker puts into a job ought to be reflected in the size of a raise they receive.
+
+4.
+
+It makes me happy when people are recognized on their merits.
+
+5.
+
+In a fair society, those who work hard should live with higher standards of living.
+
+6.
+
+I feel good when I see cheaters get caught and punished.
+
+
+
+1.
+
+I think children should be taught to be loyal to their country.
+
+2.
+
+It upsets me when people have no loyalty to their country.
+
+3.
+
+Everyone should love their own community.
+
+4.
+
+Everyone should defend their country, if called upon.
+
+5.
+
+Everyone should feel proud when a person in their community wins in an international
+
+competition.
+
+6.
+
+I believe the strength of a sports team comes from the loyalty of its members to each
+
+other.
+
+
+
+1.
+
+I think it is important for societies to cherish their traditional values.
+
+2.
+
+I feel that most traditions serve a valuable function in keeping society orderly
+
+3.
+
+I think obedience to parents is an important virtue.
+
+4.
+
+We all need to learn from our elders.
+
+5.
+
+I believe that one of the most important values to teach children is to have respect for
+
+authority.
+
+6.
+
+I think having a strong leader is good for society.
+
+
+
+1.
+
+I think the human body should be treated like a temple, housing something sacred within.
+
+2.
+
+I believe chastity is an important virtue.
+
+3.
+
+It upsets me when people use foul language like it is nothing.
+
+4.
+
+People should try to use natural medicines rather than chemically identical human-made
+
+ones.
+
+5.
+
+I admire people who keep their virginity until marriage''')
+print(response.text)
+
+extracted_responses = [resp.split('.')[1].strip() for resp in response.text.strip().split('\n') if len(resp.split('.')) > 1 and resp.split('.')[1].strip().isdigit()]
+
+len(extracted_responses)
+
+def ask_google(statement, country):
+    prompt = f'For the statement below, please indicate how well the statement describes the average person from {country}. Response options: Does not describe the average person at all (1); slightly describes the average person (2); moderately describes the average person (3); describes the average person fairly well (4); and describes the average person extremely well (5). Please answer only using a single number, with no words.\n\n'
+    prompt += f" {statement}\n"
+    # print(prompt)
+
+    response = model.generate_content(prompt)
+    extracted_response = response.text.lower().strip()
+
+    return extracted_response
+
 import os
 import csv
 import time
 
-csv_filename = 'responses.csv'
+csv_filename = 'responses_openapi10.csv'
 csv_exists = os.path.exists(csv_filename)
 csv_path = os.path.abspath(csv_filename)
 
@@ -168,15 +364,15 @@ if os.path.exists('processed_responses.txt'):
             statement_country = line.strip()
             processed_set.add(statement_country)
 
-with open('responses.csv', 'r', newline='') as csvfile, open('processed_responses.txt', 'a') as processed_file:
+with open('responses_openapi10.csv', 'r', newline='') as csvfile, open('processed_responses.txt', 'a') as processed_file:
     reader = csv.DictReader(csvfile)
-    fieldnames = reader.fieldnames + ['gemini']
+    fieldnames = reader.fieldnames
 
-    with open('new.csv', 'a', newline='') as newcsvfile:
+    with open('newgemini_responses10.csv', 'a', newline='') as newcsvfile:
         writer = csv.DictWriter(newcsvfile, fieldnames=fieldnames)
 
         # Write the header if the file is empty
-        if os.path.getsize('new.csv') == 0:
+        if os.path.getsize('newgemini_responses10.csv') == 0:
             writer.writeheader()
 
         for row in reader:
@@ -190,18 +386,25 @@ with open('responses.csv', 'r', newline='') as csvfile, open('processed_response
                 continue
 
             try:
-                time.sleep(4)
-                google_response = ask_google(statement, country)
-                processed_file.write(statement_country + '\n')  # Record the processed statement-country pair
+                gemini_responses = []
+                for i in range(10):
+                    time.sleep(4)  # Delay between API calls
+                    gemini_response = ask_google(statement, country)
+                    gemini_responses.append(gemini_response)
+
+                # Record the processed statement-country pair
+                processed_file.write(statement_country + '\n')
                 processed_set.add(statement_country)  # Update the set
+
             except Exception as e:
-                print(f"Error with Google API for statement: {statement}, country: {country} - {e}")
-                google_response = "na"
+                print(f"Error with Gemini API for statement: {statement}, country: {country} - {e}")
+                gemini_responses = ["na"] * 10
                 processed_file.write(statement_country + '\n')  # Record the processed statement-country pair
                 processed_set.add(statement_country)  # Update the set
 
-            # Write the row with the Gemini response
-            writer.writerow({**row, 'gemini': google_response})
+            # Write the row with the Gemini responses
+            row.update({f'openai_{i+1}': response for i, response in enumerate(gemini_responses)})
+            writer.writerow(row)
 
 print("New responses collected and saved to new.csv")
 
@@ -209,115 +412,238 @@ print("New responses collected and saved to new.csv")
 
 !huggingface-cli login
 
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+import requests
+import re
+import time
 
-# Check if CUDA is available and set device
-device = "cuda" if torch.cuda.is_available() else "cpu"
+API_URL = "https://api-inference.huggingface.co/models/meta-llama/Llama-2-70b-chat-hf"
+headers = {"Authorization": "Bearer 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"}
 
-# Set your Hugging Face API token
-hf_api_token = "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"
+def query(payload):
+    response = requests.post(API_URL, headers=headers, json=payload)
+    return response.json()
 
-# Set custom cache directory
-cache_dir = "/content/drive/MyDrive/moral_foundations/cache2"
 
-# Load the model and tokenizer from Hugging Face with the custom cache directory
-model_name = "meta-llama/Llama-2-13b-chat-hf"
-tokenizer = AutoTokenizer.from_pretrained(model_name, token=hf_api_token, cache_dir=cache_dir)
-model = AutoModelForCausalLM.from_pretrained(model_name, token=hf_api_token, cache_dir=cache_dir).to(device)
+def ask_meta(statements, country):
+    # Helper function to create a prompt from a list of statements
+    def create_prompt(statements_chunk):
+        prompt = f''' <s>[INST] <<SYS>>
+You are a helpful, respectful and honest assistant. You do not rewrite the statement in the answer. You do not use words to answer. You only return a number for each statement. Always answer as accurately as possible from the options given, while being careful and that correctly describes the average person from {country}.
 
-# Define the input text
-input_text = "Hello, how are you?"
-inputs = tokenizer(input_text, return_tensors="pt").to(device)
+For example:
+User: For the statements below, please indicate how well each statement describes the average person from {country}. Response options: Option 1. Does not describe the average person at all ; Option 2. slightly describes the average person; Option 3. moderately describes the average person; Option 4. describes the average person fairly well; Option 5. describes the average person extremely well. Please answer only using a single whole number from the given options, answer the question with no words.
 
-# Generate text
-with torch.no_grad():
-    outputs = model.generate(inputs["input_ids"], max_length=50)
+1. Statement 1
+2. Statement 2
 
-# Decode and print the output
-output_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-print(output_text)
 
-# Use a pipeline as a high-level helper
-from transformers import pipeline
+Assistant:
 
-messages = [
-    {"role": "user", "content": "Who are you?"},
-]
-pipe = pipeline("text-generation", model="meta-llama/Llama-2-13b-chat-hf")
-pipe(messages)
+1. 3
+2. 4
 
-# Use a pipeline as a high-level helper
-from transformers import pipeline
+<</SYS>>
 
-messages = [
-    {"role": "user", "content": "Who are you?"},
-]
-pipe2 = pipeline("text-generation", model="meta-llama/Llama-2-70b-chat-hf")
-pipe2(messages)
+User: For the statements below, please indicate how well each statement describes the average person from {country}. Response options: Option 1. Does not describe the average person at all ; Option 2. slightly describes the average person; Option 3. moderately describes the average person; Option 4. describes the average person fairly well; Option 5. describes the average person extremely well. Please answer only using a single whole number from the given options, answer the question with no words. \n\n
 
-messages = [
-    {"role": "user", "content": '''For each of the statements below, please indicate how well it describes the average person from Argentina. Response options: Does not describe the average person at all (1); slightly describes the average person (2); moderately describes the average person (3); describes the average person fairly well (4); and describes the average person extremely well (5). Please answer only using a single number, with no words. Just return a single digit from the options please, no words. 1. Caring for people who have suffered is an important virtue.
+
+'''
+        statement_count = 1
+        for statement in statements_chunk:
+            prompt += f"{statement_count}. {statement}\n"
+            statement_count += 1
+        prompt += "Assistant: \n [/INST]"
+        return prompt
+
+    # Flatten the statements dictionary into a list
+    all_statements = [statement for statement_list in statements.values() for statement in statement_list]
+
+    # Process statements in chunks of 12
+    chunk_size = 1
+    def get_responses():
+      all_responses = []
+
+      for i in range(0, len(all_statements), chunk_size):
+          chunk = all_statements[i:i + chunk_size]
+          chunk_responses = []
+          while len(chunk_responses) != chunk_size:
+            time.sleep(5)
+
+            prompt = create_prompt(chunk)
+            response = query({"inputs": prompt, "temperature": 100.0})
+            # print(response)
+            generated_text = response[0]["generated_text"]
+
+            # Extract the responses
+            pattern = re.compile(r'\[\/INST\]\s*(.*)', re.DOTALL)
+            match = pattern.search(generated_text)
+            if match:
+                digits_section = match.group(1).strip()
+                if digits_section.isdigit():
+                  chunk_responses = [int(digits_section)]
+                elif re.findall(r'\d+\.\s*(\d+)', digits_section):
+                  chunk_responses = re.findall(r'\d+\.\s*(\d+)', digits_section)
+                else:
+                  chunk_responses = re.findall(r'Assistant:\s*(\d+)', digits_section)
+                chunk_responses = [int(response) for response in chunk_responses]
+            if len(chunk_responses) != chunk_size:
+                print(f"Expected {chunk_size} responses, but got {len(chunk_responses)}. Retrying...")
+                time.sleep(5)
+
+          all_responses.extend(chunk_responses)
+
+      return all_responses
+
+    all_results = []
+    for _ in range(10):
+        responses = get_responses()
+        if len(responses) == 36:
+            all_results.append(responses)
+            print(all_results)
+        else:
+            print(f"Expected 36 responses, but got {len(responses)}. Retrying...")
+
+    return all_results
+
+len(responses)
+
+countries = ["Egypt", "France", "Ireland", "Japan", "Kenya", "Mexico", "Morocco", "New Zealand", "Nigeria", "Peru", "Russia", "Saudi Arabia", "South Africa", "Switzerland", "UAE", "Ghana", "Germany", "Italy", "Netherlands", "Spain", "UK", "Australia", "Canada", "USA", "Brazil", "South Korea", "Norway", "Sweden", "Iran", "India", "China", "Namibia", "Congo", "Turkey", "Poland"]
+
+responses = ask_meta(statements, "Congo")
+
+# Argentina = [[4, 4, 3, 4, 4, 4, 2, 2, 2, 2, 3, 4, 4, 5, 4, 5, 5, 4, 3, 4, 4, 4, 4, 4, 4, 4, 5, 4, 5, 3, 2, 5, 4, 4, 3, 4]]
+#Belgium =   [[4, 4, 3, 4, 4, 4, 2, 2, 2, 2, 3, 4, 4, 4, 5, 5, 4, 3, 4, 4, 4, 4, 5, 4, 3, 4, 4, 5, 5, 3, 2, 4, 4, 3, 3, 4], [4, 4, 3, 4, 4, 4, 2, 2, 2, 2, 3, 4, 4, 4, 5, 5, 4, 3, 4, 4, 4, 4, 5, 4, 3, 4, 4, 5, 5, 3, 2, 4, 4, 3, 3, 4], [4, 4, 3, 4, 4, 4, 2, 2, 2, 2, 3, 4, 4, 4, 5, 5, 4, 3, 4, 4, 4, 4, 5, 4, 3, 4, 4, 5, 5, 3, 2, 4, 4, 3, 3, 4], [4, 4, 3, 4, 4, 4, 2, 2, 2, 2, 3, 4, 4, 4, 5, 5, 4, 3, 4, 4, 4, 4, 5, 4, 3, 4, 4, 5, 5, 3, 2, 4, 4, 3, 3, 4], [4, 4, 3, 4, 4, 4, 2, 2, 2, 2, 3, 4, 4, 4, 5, 5, 4, 3, 4, 4, 4, 4, 5, 4, 3, 4, 4, 5, 5, 3, 2, 4, 4, 3, 3, 4], [4, 4, 3, 4, 4, 4, 2, 2, 2, 2, 3, 4, 4, 4, 5, 5, 4, 3, 4, 4, 4, 4, 5, 4, 3, 4, 4, 5, 5, 3, 2, 4, 4, 3, 3, 4], [4, 4, 3, 4, 4, 4, 2, 2, 2, 2, 3, 4, 4, 4, 5, 5, 4, 3, 4, 4, 4, 4, 5, 4, 3, 4, 4, 5, 5, 3, 2, 4, 4, 3, 3, 4], [4, 4, 3, 4, 4, 4, 2, 2, 2, 2, 3, 4, 4, 4, 5, 5, 4, 3, 4, 4, 4, 4, 5, 4, 3, 4, 4, 5, 5, 3, 2, 4, 4, 3, 3, 4], [4, 4, 3, 4, 4, 4, 2, 2, 2, 2, 3, 4, 4, 4, 5, 5, 4, 3, 4, 4, 4, 4, 5, 4, 3, 4, 4, 5, 5, 3, 2, 4, 4, 3, 3, 4], [4, 4, 3, 4, 4, 4, 2, 2, 2, 2, 3, 4, 4, 4, 5, 5, 4, 3, 4, 4, 4, 4, 5, 4, 3, 4, 4, 5, 5, 3, 2, 4, 4, 3, 3, 4]]
+#Chile =     [[4, 5, 4, 5, 4, 4, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 3, 4, 4, 4, 5, 5, 4, 4, 5, 4, 4, 5, 3, 4, 4, 4, 4, 3, 5], [4, 5, 4, 5, 4, 4, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 3, 4, 4, 4, 5, 5, 4, 4, 5, 4, 4, 5, 3, 4, 4, 4, 4, 3, 5], [4, 5, 4, 5, 4, 4, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 3, 4, 4, 4, 5, 5, 4, 4, 5, 4, 4, 5, 3, 4, 4, 4, 4, 3, 5], [4, 5, 4, 5, 4, 4, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 3, 4, 4, 4, 5, 5, 4, 4, 5, 4, 4, 5, 3, 4, 4, 4, 4, 3, 5], [4, 5, 4, 5, 4, 4, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 3, 4, 4, 4, 5, 5, 4, 4, 5, 4, 4, 5, 3, 4, 4, 4, 4, 3, 5], [4, 5, 4, 5, 4, 4, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 3, 4, 4, 4, 5, 5, 4, 4, 5, 4, 4, 5, 3, 4, 4, 4, 4, 3, 5], [4, 5, 4, 5, 4, 4, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 3, 4, 4, 4, 5, 5, 4, 4, 5, 4, 4, 5, 3, 4, 4, 4, 4, 3, 5], [4, 5, 4, 5, 4, 4, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 3, 4, 4, 4, 5, 5, 4, 4, 5, 4, 4, 5, 3, 4, 4, 4, 4, 3, 5], [4, 5, 4, 5, 4, 4, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 3, 4, 4, 4, 5, 5, 4, 4, 5, 4, 4, 5, 3, 4, 4, 4, 4, 3, 5], [4, 5, 4, 5, 4, 4, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 3, 4, 4, 4, 5, 5, 4, 4, 5, 4, 4, 5, 3, 4, 4, 4, 4, 3, 5]]
+
+import csv
+import os
+
+def csv_file_exists(filename):
+    return os.path.exists(filename)
+
+def save_responses_to_csv(statements, country, all_responses, csv_filename):
+    # Flatten the statements dictionary into a list
+    flat_statements = [(category, statement) for category, statement_list in statements.items() for statement in statement_list]
+
+    # Check if CSV file exists
+    csv_exists = csv_file_exists(csv_filename)
+    csv_path = os.path.abspath(csv_filename)
+
+    if csv_exists:
+        print(f"File {csv_filename} exists at {csv_path}")
+    else:
+        print(f"File {csv_filename} does not exist.")
+
+    # Initialize set for existing results
+    existing_results = set()
+
+    # If CSV file exists, read existing results
+    if csv_exists:
+        with open(csv_filename, 'r', newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                existing_results.add((row['country'], row['category'], row['statement']))
+
+    # Open the CSV file in append mode
+    with open(csv_filename, 'a', newline='') as csvfile:
+        fieldnames = ['country', 'category', 'statement'] + [f'llama_{i}' for i in range(1, 11)]  # Adjust for 10 OpenAI responses
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        # Write header if the file is empty
+        if not csv_exists:
+            writer.writeheader()
+
+        # Write new responses to the CSV file
+        for i, (category, statement) in enumerate(flat_statements):
+            # Create a dictionary for each row
+            row = {
+                'country': country,
+                'category': category,
+                'statement': statement
+            }
+            for j in range(10):  # 10 sets of responses
+                row[f'llama_{j + 1}'] = all_responses[j][i]
+
+            # Check if the row already exists
+            if (country, category, statement) not in existing_results:
+                writer.writerow(row)
+
+# country = "Congo"
+# responses  # This should be the list of lists with 10 sets of responses
+csv_filename = "llama_singleitem.csv"
+
+for i in countries:
+  responses = ask_meta(statements, i)
+  save_responses_to_csv(statements, i, responses, csv_filename)
+
+countries = [  "Congo", "Turkey", "Poland"]
+
+
+
+
+
+API_URL = "https://api-inference.huggingface.co/models/meta-llama/Llama-2-70b-chat-hf"
+headers = {"Authorization": "Bearer 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"}
+
+def query(payload):
+	response = requests.post(API_URL, headers=headers, json=payload)
+	return response.json()
+
+payload = {
+    "inputs": '''
+	<s>[INST] <<SYS>>
+You are a helpful, respectful and honest assistant. Always answer as accurately as possible with a single whole number from the options given, while being careful and that correctly describes the average person from Poland.
+Please dont give explaination with the option you think is correct. And dont give the answer in words, just give the corresponding number to the statements.
+</SYS>>
+
+For the statements below, please indicate how well each statement describes the average person from Poland. Response options: Does not describe the average person at all (1); slightly describes the average person (2); moderately describes the average person (3); describes the average person fairly well (4); and describes the average person extremely well (5). Please answer only using a single whole number from the given options, answer the question with no words. \n\n
+
+1. Caring for people who have suffered is an important virtue.
 2. I believe that compassion for those who are suffering is one of the most crucial virtues.
 3. We should all care for people who are in emotional pain.
 4. I am empathetic toward those people who have suffered in their lives.
 5. Everyone should try to comfort people who are going through something hard.
 6. It pains me when I see someone ignoring the needs of another human being.
-Equality
-1. The world would be a better place if everyone made the same amount of money.
-2. Our society would have fewer problems if people had the same income.
-3. I believe that everyone should be given the same quantity of resources in life.
-4. I believe it would be ideal if everyone in society wound up with roughly the same amount
-of money.
-5. When people work together toward a common goal, they should share the rewards
-equally, even if some worked harder on it.
-6. I get upset when some people have a lot more money than others in my country.
-Proportionality
-1. I think people who are more hard-working should end up with more money.
-2. I think people should be rewarded in proportion to what they contribute.
-3. The effort a worker puts into a job ought to be reflected in the size of a raise they receive.
-4. It makes me happy when people are recognized on their merits.
-5. In a fair society, those who work hard should live with higher standards of living.
-6. I feel good when I see cheaters get caught and punished.
-Loyalty
-1. I think children should be taught to be loyal to their country.
-2. It upsets me when people have no loyalty to their country.
-3. Everyone should love their own community.
-4. Everyone should defend their country, if called upon.
-5. Everyone should feel proud when a person in their community wins in an international
-competition.
-6. I believe the strength of a sports team comes from the loyalty of its members to each
-other.
-Authority
-1. I think it is important for societies to cherish their traditional values.
-2. I feel that most traditions serve a valuable function in keeping society orderly
-3. I think obedience to parents is an important virtue.
-4. We all need to learn from our elders.
-5. I believe that one of the most important values to teach children is to have respect for
-authority.
-6. I think having a strong leader is good for society.
-Purity
-1. I think the human body should be treated like a temple, housing something sacred within.
-2. I believe chastity is an important virtue.
-3. It upsets me when people use foul language like it is nothing.
-4. If I found out that an acquaintance had an unusual but harmless sexual fetish I would feel
-uneasy about them.
-5. People should try to use natural medicines rather than chemically identical human-made
-ones.
-6. I admire people who keep their virginity until marriage.\n\n '''},
-]
+7. The world would be a better place if everyone made the same amount of money.
+8. Our society would have fewer problems if people had the same income.
+9. I believe that everyone should be given the same quantity of resources in life.
+10. I believe it would be ideal if everyone in society wound up with roughly the same amount of money.
+11. When people work together toward a common goal, they should share the rewards equally,[/INST]
 
-message= pipe(messages)
+''',
+    "temperature":100.0,
 
-message
+
+}
+
+output = query(payload)
+
+output
 
 import re
-match = re.search(r'\((\d+)\)', message[0]['generated_text'][1]['content'])
+
+# Extract the generated text
+generated_text = output[0]["generated_text"]
+
+# Define a regular expression to match the digits after the `</INST>` tag
+pattern = re.compile(r'\[\/INST\]\s*(.*)', re.DOTALL)
+match = pattern.search(generated_text)
+
+# Extract the digits if the pattern is found
 if match:
-    digit = match.group(1)
-    print(f"Extracted digit: {digit}")
+    digits_section = match.group(1).strip()
+
+    # Split the section into individual responses
+    responses = re.findall(r'\d+\.\s*(\d+)', digits_section)
+
+    # Convert responses to integers
+    responses = [int(response) for response in responses]
+
+    print(responses)
 else:
-    print("No digit found")
+    print("Pattern not found")
+
+[3, 4, 4, 5, 5, 4, 2, 2, 1, 1, 5]
 
 gpu_info = !nvidia-smi
 gpu_info = '\n'.join(gpu_info)
@@ -326,3 +652,315 @@ if gpu_info.find('failed') >= 0:
 else:
   print(gpu_info)
 
+37*36
+
+countries = [ "Argentina","Belgium", "Chile", "Colombia", "Egypt", "France", "Ireland", "Japan", "Kenya", "Mexico", "Morocco", "New Zealand", "Nigeria", "Peru", "Russia", "Saudi Arabia", "South Africa", "Switzerland", "UAE", "Ghana", "Germany", "Italy", "Netherlands", "Spain", "UK", "Australia", "Canada", "USA", "Brazil", "South Korea", "Norway", "Sweden", "Iran", "India", "China", "Namibia", "Congo", "Turkey", "Poland"]
+
+import time
+
+import time
+
+def ask_openai(statements, country):
+    prompt = f"For each of the statements below, please indicate how well each statement describes the average person from {country}. Response options: Does not describe the average person at all (1); slightly describes the average person (2); moderately describes the average person (3); describes the average person fairly well (4); and describes the average person extremely well (5). Please answer only using a single number, with no words.\n\n"
+
+    for category, statement_list in statements.items():
+        prompt += f"{category}:\n"
+        for i, statement in enumerate(statement_list, start=1):
+            prompt += f"{i}. {statement}\n"
+
+    all_responses = []
+    num_responses_needed = 10
+
+    while len(all_responses) < num_responses_needed:
+        time.sleep(20)  # Add delay between requests to manage API rate limits
+
+        response = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt,
+                }
+            ],
+            model="gpt-4",
+            temperature=1
+        )
+
+        responses = response.choices[0].message.content
+        extracted_responses = [resp.split('.')[1].strip() for resp in responses.strip().split('\n') if len(resp.split('.')) > 1 and resp.split('.')[1].strip().isdigit()]
+
+        if len(extracted_responses) == 36:
+            all_responses.append(extracted_responses)
+            print(len(all_responses))
+        else:
+            print(f"Incomplete responses received: {extracted_responses}")
+
+
+    return all_responses
+
+csv_filename = 'responses10.csv'
+
+# Function to check if CSV file exists
+def csv_file_exists(filename):
+    return os.path.exists(filename)
+
+# Check if CSV file exists
+csv_exists = csv_file_exists(csv_filename)
+csv_path = os.path.abspath(csv_filename)
+
+if csv_exists:
+    print(f"File {csv_filename} exists at {csv_path}")
+else:
+    print(f"File {csv_filename} does not exist.")
+
+# Initialize set for existing results
+existing_results = set()
+
+# If CSV file exists, read existing results
+if csv_exists:
+    with open(csv_filename, 'r', newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            existing_results.add((row['country'], row['category'], row['statement']))
+
+# Open the CSV file in read mode and create a list of dictionaries for existing rows
+existing_rows = []
+if csv_exists:
+    with open(csv_filename, 'r', newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            existing_rows.append(dict(row))
+
+# Open the CSV file in append mode
+with open(csv_filename, 'a', newline='') as csvfile:
+    fieldnames = ['country', 'category', 'statement'] + [f'openai_{i}' for i in range(1, 11)]  # Adjust for 10 OpenAI responses
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+    # Write header if the file is empty
+    if not csv_exists:
+        writer.writeheader()
+
+    # Loop through each country and process statements
+    for country in countries:
+        to_process = [
+            (country, category, statement)
+            for category, statements_list in statements.items()
+            for statement in statements_list
+            if (country, category, statement) not in existing_results
+        ]
+
+        # Skip processing if no statements to process
+        if not to_process:
+            continue
+
+        try:
+            # Get 10 lists of responses for the country
+            openai_responses = ask_openai(statements, country)
+            print(openai_responses)
+            if len(openai_responses) != 10 or any(len(resp) != len(to_process) for resp in openai_responses):
+              raise ValueError("Unexpected response format from OpenAI API")
+
+            # Prepare results to write to CSV
+            for i in range(10):
+                for (country, category, statement), openai_response in zip(to_process, openai_responses[i]):
+                    # Check if the row exists in existing_rows
+                    existing_row_index = next((index for index, row in enumerate(existing_rows) if row['country'] == country and row['category'] == category and row['statement'] == statement), None)
+
+                    if existing_row_index is not None:
+                        # Update existing row with new openai_response
+                        existing_rows[existing_row_index][f'openai_{i+1}'] = openai_response
+                    else:
+                        # Create a new result dictionary
+                        result = {
+                            'country': country,
+                            'category': category,
+                            'statement': statement,
+                        }
+                        result.update({f'openai_{i+1}': openai_response})  # Use i+1 to match column numbering (1-indexed)
+
+                        existing_rows.append(result)
+            writer.writerows(existing_rows)
+            csvfile.flush()  # Ensure data is written to the file immediately
+            existing_rows = []  # Clear existing_rows after writing
+
+        except Exception as e:
+            print(f"Error with OpenAI API for country: {country} - {e}")
+            openai_responses = [["na"] * len(to_process)] * 10  # Handle error by filling with 'na' responses
+
+
+print("Responses collected and saved to responses10.csv")
+
+existing_rows
+
+import csv
+import os
+
+csv_filename = 'testing10.csv'
+fieldnames = ['country', 'category', 'statement'] + [f'gemini_{i}' for i in range(1, 11)]  # Adjust for 10 OpenAI responses
+
+
+# Check if the CSV file exists
+csv_exists = os.path.exists(csv_filename)
+
+# Open the CSV file to write data
+with open(csv_filename, 'a', newline='') as csvfile:
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+    # If file is empty, write header
+    if not csv_exists or os.path.getsize(csv_filename) == 0:
+        writer.writeheader()
+
+    # Write data to CSV
+    for i in range(len(existing_rows)):
+      writer.writerow(existing_rows[i])  # Example for writing a single row
+
+print(f"Data written to {csv_filename}")
+
+statements = {
+    "Caring": [
+        "Caring for people who have suffered is an important virtue.",
+        "I believe that compassion for those who are suffering is one of the most crucial virtues.",
+
+    ],
+
+}
+
+def ask_google(statements, country):
+    prompt = f'For each of the statements below, please indicate how well each statement describes the average person from {country}. Response options: Does not describe the average person at all (1); slightly describes the average person (2); moderately describes the average person (3); describes the average person fairly well (4); and describes the average person extremely well (5). Please answer only using a single number, with no words.\n\n'
+    for category, statement_list in statements.items():
+      for i, statement in enumerate(statement_list, start=1):
+          prompt += f"{i}. {statement}\n"
+    all_responses = []
+    print(prompt)
+    while len(all_responses) < 10:
+      try:
+          time.sleep(6)
+          response = model.generate_content(prompt)
+          extracted_response = [
+              resp.split('.')[1].strip()
+              for resp in response.text.strip().split('\n')
+              if len(resp.split('.')) > 1 and resp.split('.')[1].strip().isdigit()
+          ]
+
+          if len(extracted_response) == 35:
+              all_responses.append(extracted_response)
+              print(f"Collected {len(all_responses)} out of 10 responses")
+          else:
+              print(f"Incomplete response received: {extracted_response}, retrying...")
+
+      except Exception as e:
+          print(f"Error occurred: {e}, retrying...")
+
+    return all_responses
+
+google_responses = ask_google(statements, "argentina")
+
+google_responses
+
+import time
+
+
+
+existing_rows
+
+Sweden=[['5', '5', '5', '5', '5', '5', '4', '3', '4', '4', '5', '4', '4', '4', '4', '5', '4', '3', '3', '3', '3', '4', '4', '4', '4', '4', '4', '3', '4', '3', '3', '3', '3', '3', '3'], ['4', '4', '4', '3', '3', '2', '3', '3', '3', '3', '3', '2', '3', '3', '3', '3', '3', '2', '3', '2', '2', '3', '3', '2', '3', '3', '3', '3', '3', '2', '2', '2', '2', '2', '2'], ['4', '5', '5', '4', '4', '3', '3', '3', '3', '3', '4', '3', '4', '4', '4', '3', '4', '3', '3', '2', '3', '3', '4', '4', '3', '3', '4', '4', '4', '3', '3', '2', '2', '2', '2'], ['4', '5', '4', '4', '5', '5', '3', '3', '2', '3', '4', '4', '4', '4', '4', '4', '5', '4', '3', '3', '3', '4', '4', '3', '4', '4', '3', '4', '3', '4', '3', '2', '3', '3', '2'], ['4', '5', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '2', '2', '2', '2', '2', '2', '3', '3', '3', '3', '3', '3', '2', '2', '2', '2', '2'], ['4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '3', '4', '4', '4', '4', '4', '3', '3', '3', '3', '4', '4', '3', '3', '3', '3', '3', '3', '3', '3', '2', '3', '3'], ['4', '4', '4', '4', '4', '3', '2', '2', '2', '2', '3', '2', '3', '3', '3', '3', '3', '3', '2', '2', '2', '2', '3', '3', '3', '3', '3', '3', '3', '3', '2', '2', '2', '2', '2'], ['4', '4', '4', '4', '4', '3', '2', '2', '1', '2', '3', '3', '4', '4', '4', '4', '4', '3', '3', '2', '3', '3', '4', '3', '3', '3', '3', '3', '3', '3', '2', '2', '2', '2', '2'], ['4', '5', '4', '4', '4', '4', '3', '3', '3', '3', '2', '2', '4', '4', '4', '5', '4', '4', '3', '3', '3', '3', '4', '3', '3', '3', '3', '3', '3', '3', '3', '2', '2', '2', '2'], ['4', '4', '4', '4', '4', '3', '2', '2', '2', '3', '3', '2', '4', '4', '4', '4', '4', '3', '3', '2', '3', '3', '4', '2', '3', '3', '4', '4', '4', '3', '2', '1', '1', '1', '1']]
+
+Iran = [['4', '5', '4', '4', '4', '4', '2', '2', '2', '2', '2', '2', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '3', '4', '4', '4', '4', '4', '4', '3', '3', '2', '2', '2'], ['5', '4', '5', '4', '5', '5', '3', '3', '3', '3', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3'], ['4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3'], ['4', '4', '4', '4', '4', '4', '2', '2', '1', '3', '3', '2', '5', '5', '4', '4', '4', '5', '3', '3', '4', '4', '4', '3', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3'], ['4', '4', '4', '4', '4', '4', '2', '2', '2', '2', '2', '3', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '3', '4', '3', '3'], ['4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3'], ['4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3'], ['4', '4', '4', '4', '4', '4', '2', '2', '2', '2', '2', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '2', '2', '2', '2', '2'], ['4', '5', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4'], ['4', '5', '4', '4', '4', '5', '3', '3', '2', '3', '4', '3', '4', '4', '4', '5', '5', '4', '3', '3', '4', '4', '4', '2', '4', '4', '4', '3', '4', '3', '3', '3', '2', '2', '3']]
+Nambia = [['4', '5', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3'], ['4', '5', '4', '4', '4', '4', '3', '3', '3', '4', '4', '3', '4', '4', '4', '4', '4', '4', '3', '3', '4', '4', '4', '4', '3', '3', '4', '4', '4', '3', '3', '3', '3', '3', '3'], ['4', '5', '4', '5', '4', '4', '2', '2', '2', '2', '3', '3', '3', '4', '4', '5', '4', '5', '3', '4', '4', '4', '4', '5', '3', '3', '3', '4', '4', '4', '3', '3', '4', '3', '3'], ['4', '5', '4', '4', '4', '5', '3', '2', '3', '3', '4', '3', '4', '4', '4', '4', '4', '4', '3', '3', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '3', '3', '2', '2', '3'], ['4', '4', '4', '4', '4', '4', '2', '2', '2', '2', '2', '2', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '2', '2', '2', '2', '2'], ['4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '4', '3', '4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '2', '2', '2', '2', '2'], ['4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3'], ['4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '2', '2', '2', '2', '2', '2'], ['4', '4', '4', '4', '4', '4', '2', '2', '2', '2', '2', '2', '3', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '2', '2', '2', '2', '2'], ['4', '4', '4', '4', '4', '4', '2', '2', '2', '2', '2', '2', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '2', '2', '3', '2']]
+Congo=[['3', '4', '4', '4', '4', '3', '2', '2', '3', '3', '3', '3', '4', '4', '4', '4', '4', '3', '3', '2', '3', '3', '4', '3', '3', '3', '3', '3', '3', '3', '2', '2', '2', '2', '2'], ['4', '5', '4', '4', '4', '4', '2', '2', '2', '2', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '2', '2', '3', '2', '3', '3', '3', '3', '3', '3', '3', '2', '2', '2', '2'], ['5', '5', '5', '5', '5', '5', '3', '3', '4', '3', '4', '3', '4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '2', '2', '2', '2', '2'], ['4', '5', '4', '4', '4', '4', '3', '2', '2', '3', '3', '3', '3', '3', '3', '4', '3', '3', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '3', '4', '3', '3', '3'], ['3', '4', '3', '4', '4', '4', '2', '2', '2', '3', '3', '3', '4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '2', '2', '2', '2', '2'], ['4', '4', '4', '4', '4', '4', '2', '2', '2', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3'], ['4', '4', '4', '4', '4', '4', '2', '2', '2', '2', '2', '2', '3', '3', '3', '3', '3', '3', '3', '2', '3', '3', '4', '3', '3', '3', '3', '3', '3', '3', '2', '2', '2', '1', '2'], ['4', '4', '4', '4', '4', '4', '2', '2', '2', '3', '3', '3', '3', '3', '3', '3', '3', '2', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '2', '2', '1', '2', '1'], ['4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3'], ['4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '2', '2', '2', '2', '2']]
+Turkey =[['4', '5', '4', '4', '4', '4', '2', '2', '2', '2', '3', '3', '4', '4', '4', '4', '4', '4', '3', '2', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '2', '1', '1', '2', '2'], ['4', '5', '4', '4', '4', '5', '3', '2', '2', '3', '2', '4', '4', '5', '5', '4', '4', '4', '3', '3', '3', '4', '4', '4', '3', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3'], ['4', '5', '5', '5', '5', '5', '3', '3', '4', '4', '4', '4', '4', '4', '5', '5', '5', '5', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3'], ['5', '5', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3'], ['4', '3', '3', '4', '4', '4', '3', '3', '3', '3', '4', '3', '4', '4', '4', '4', '4', '4', '4', '3', '3', '4', '4', '4', '4', '4', '3', '4', '4', '3', '3', '2', '2', '2', '2'], ['4', '4', '4', '4', '4', '4', '2', '2', '2', '2', '2', '2', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '2', '2', '2', '2', '2'], ['4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3'], ['4', '5', '3', '4', '4', '5', '3', '2', '2', '3', '3', '3', '4', '5', '5', '5', '5', '5', '3', '3', '3', '3', '4', '4', '4', '3', '4', '3', '4', '3', '2', '2', '2', '2', '2'], ['5', '5', '4', '4', '4', '4', '2', '2', '2', '2', '2', '3', '4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '4', '3', '4', '4', '4', '5', '4', '4', '2', '2', '2', '2', '2'], ['4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '3', '4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '3', '3', '4', '3', '3', '3', '2', '2', '2', '2', '2']]
+Poland= [['4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '4', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3'], ['4', '4', '4', '4', '4', '3', '2', '2', '2', '2', '2', '3', '4', '4', '4', '4', '4', '4', '4', '3', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '3', '3', '2', '3', '2'], ['4', '4', '4', '4', '4', '3', '2', '2', '2', '3', '2', '3', '4', '4', '5', '4', '4', '4', '4', '4', '4', '4', '4', '4', '3', '4', '4', '4', '4', '3', '3', '2', '2', '2', '2'], ['4', '4', '4', '4', '4', '4', '2', '2', '2', '3', '3', '3', '3', '4', '4', '4', '4', '3', '3', '3', '3', '3', '4', '3', '3', '3', '4', '4', '4', '3', '3', '3', '3', '3', '3'], ['4', '4', '4', '4', '4', '4', '3', '3', '2', '3', '3', '3', '5', '5', '5', '5', '5', '5', '4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3'], ['4', '5', '5', '5', '5', '4', '3', '3', '3', '3', '3', '3', '3', '4', '4', '5', '5', '5', '3', '3', '3', '4', '4', '4', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3'], ['4', '4', '5', '5', '4', '4', '2', '2', '2', '3', '3', '4', '4', '4', '3', '4', '4', '4', '4', '4', '4', '4', '5', '4', '3', '3', '4', '4', '4', '3', '3', '3', '3', '3', '3'], ['4', '5', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '3', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '3', '3', '4', '3', '3', '3', '3', '3', '3', '3', '3'], ['4', '5', '4', '4', '4', '4', '3', '3', '2', '3', '3', '3', '4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '4', '3', '3', '3', '3', '3', '3', '3', '3', '2', '3', '2'], ['4', '4', '4', '4', '4', '4', '2', '2', '2', '2', '2', '2', '3', '4', '4', '3', '4', '3', '3', '3', '3', '4', '4', '4', '4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3']]
+
+India= [['4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '4', '3', '3', '4', '4', '4', '4', '4', '4', '3', '4', '4', '4', '3', '4', '3', '4', '4', '4', '2', '3', '2', '2', '2', '2'], ['4', '4', '4', '4', '3', '3', '2', '2', '2', '2', '2', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '2', '2', '2', '2', '2'], ['4', '5', '4', '4', '4', '4', '2', '1', '1', '3', '3', '3', '5', '5', '5', '5', '5', '4', '4', '3', '4', '4', '4', '3', '4', '4', '4', '4', '4', '3', '3', '2', '2', '2', '2'], ['4', '4', '4', '4', '4', '4', '2', '2', '3', '3', '3', '4', '4', '4', '4', '4', '4', '4', '4', '3', '4', '4', '4', '3', '3', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3'], ['4', '5', '4', '4', '3', '5', '3', '2', '3', '3', '3', '3', '4', '4', '4', '4', '4', '4', '3', '3', '3', '4', '4', '4', '3', '3', '4', '4', '4', '3', '2', '2', '2', '2', '2'], ['4', '4', '4', '4', '3', '4', '2', '1', '2', '2', '3', '3', '4', '4', '4', '4', '4', '4', '4', '4', '3', '4', '4', '4', '5', '4', '4', '4', '4', '3', '3', '2', '2', '3', '2'], ['4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3'], ['4', '3', '4', '4', '4', '3', '2', '2', '2', '2', '3', '3', '4', '4', '4', '4', '4', '3', '3', '2', '3', '3', '4', '3', '3', '3', '3', '3', '3', '4', '3', '2', '2', '3', '2'], ['5', '5', '4', '4', '4', '3', '3', '2', '1', '2', '2', '4', '4', '4', '4', '4', '4', '3', '4', '3', '4', '4', '4', '3', '4', '3', '4', '4', '4', '3', '3', '2', '2', '3', '2'], ['3', '5', '4', '4', '4', '4', '2', '2', '3', '4', '4', '3', '4', '4', '4', '4', '4', '4', '3', '3', '3', '4', '4', '4', '3', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3']]
+China= [['4', '4', '4', '4', '4', '4', '3', '2', '2', '3', '3', '3', '4', '4', '4', '4', '4', '4', '4', '3', '4', '4', '4', '3', '3', '3', '4', '4', '4', '3', '2', '1', '2', '1', '2'], ['4', '5', '4', '4', '4', '5', '2', '2', '2', '2', '2', '2', '3', '3', '3', '3', '3', '3', '3', '2', '3', '3', '3', '3', '3', '3', '4', '4', '4', '3', '3', '3', '2', '2', '3'], ['4', '4', '4', '4', '4', '4', '3', '2', '3', '3', '3', '2', '4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3'], ['4', '5', '4', '4', '4', '4', '3', '3', '3', '4', '4', '3', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '3', '4'], ['4', '4', '4', '4', '4', '4', '2', '3', '2', '2', '2', '3', '5', '5', '5', '5', '5', '5', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3'], ['4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4'], ['4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '3', '4', '4', '4', '4', '4', '4', '4', '3', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '3', '3', '2', '3', '3'], ['4', '5', '4', '4', '5', '5', '2', '3', '2', '3', '4', '3', '4', '4', '4', '5', '4', '5', '4', '3', '4', '4', '4', '4', '3', '3', '4', '4', '4', '3', '3', '2', '2', '3', '3'], ['4', '5', '4', '4', '4', '4', '3', '3', '3', '4', '4', '3', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '3', '4', '3', '2', '2'], ['4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3', '3', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '3', '3', '3', '3', '3']]
+
+csv_filename = 'testing.csv'
+
+# Function to check if CSV file exists
+def csv_file_exists(filename):
+    return os.path.exists(filename)
+
+# Check if CSV file exists
+csv_exists = csv_file_exists(csv_filename)
+csv_path = os.path.abspath(csv_filename)
+
+if csv_exists:
+    print(f"File {csv_filename} exists at {csv_path}")
+else:
+    print(f"File {csv_filename} does not exist.")
+
+# Initialize set for existing results
+existing_results = set()
+
+# If CSV file exists, read existing results
+if csv_exists:
+    with open(csv_filename, 'r', newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            existing_results.add((row['country'], row['category'], row['statement']))
+
+# Open the CSV file in read mode and create a list of dictionaries for existing rows
+existing_rows = []
+if csv_exists:
+    with open(csv_filename, 'r', newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            existing_rows.append(dict(row))
+
+# Open the CSV file in append mode
+with open(csv_filename, 'a', newline='') as csvfile:
+    fieldnames = ['country', 'category', 'statement'] + [f'gemini_{i}' for i in range(1, 11)]  # Adjust for 10 OpenAI responses
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+    # Write header if the file is empty
+    if not csv_exists:
+        writer.writeheader()
+
+    # Loop through each country and process statements
+    for country in countries:
+        to_process = [
+            (country, category, statement)
+            for category, statements_list in statements.items()
+            for statement in statements_list
+            if (country, category, statement) not in existing_results
+        ]
+
+        # Skip processing if no statements to process
+        if not to_process:
+            continue
+
+        try:
+            # Get 10 lists of responses for the country
+            google_responses = ask_google(statements, country)
+            print(google_responses)
+            if len(google_responses) != 10 or any(len(resp) != len(to_process) for resp in google_responses):
+              raise ValueError("Unexpected response format from gemini API")
+
+            # Prepare results to write to CSV
+            for i in range(10):
+                for (country, category, statement), google_response in zip(to_process, google_responses[i]):
+                    # Check if the row exists in existing_rows
+                    existing_row_index = next((index for index, row in enumerate(existing_rows) if row['country'] == country and row['category'] == category and row['statement'] == statement), None)
+
+                    if existing_row_index is not None:
+                        # Update existing row with new google_response
+                        existing_rows[existing_row_index][f'gemini_{i+1}'] = google_response
+                    else:
+                        # Create a new result dictionary
+                        result = {
+                            'country': country,
+                            'category': category,
+                            'statement': statement,
+                        }
+                        result.update({f'gemini_{i+1}': google_response})  # Use i+1 to match column numbering (1-indexed)
+
+                        existing_rows.append(result)
+            writer.writerows(existing_rows)
+            csvfile.flush()  # Ensure data is written to the file immediately
+            existing_rows = []  # Clear existing_rows after writing
+
+        except Exception as e:
+            print(f"Error with gemini API for country: {country} - {e}")
+            google_responses = [["na"] * len(to_process)] * 10  # Handle error by filling with 'na' responses
+
+
+print("Responses collected and saved to gemini10.csv")

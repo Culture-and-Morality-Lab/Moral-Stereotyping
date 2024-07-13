@@ -18,7 +18,7 @@ import google.generativeai as genai
 # Setup your API keys
 openai_api_key = 'sk-proj-G2ykr3ywJOkTg76KrEiqT3BlbkFJm2eDwGSOMYieizUPCWCd'
 anthropic_api_key = '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'
-google_api_key = 'AIzaSyAbkeHEEgISOoe108kpXq4ah90EszpAAIA'
+google_api_key = 'AIzaSyDc2xTSyN-dFPbzGFiojqeTAkBrImDbkO4'
 
 client = OpenAI(
     api_key=openai_api_key
@@ -141,7 +141,9 @@ def ask_google(statements, country):
 
     while len(all_responses) < 1:
       time.sleep(6)
-      response = model.generate_content(prompt)
+      response = model.generate_content(prompt,
+        generation_config=genai.types.GenerationConfig(
+        temperature=2.0))
       extracted_response = [resp.split('.')[1].strip() for resp in response.text.strip().split('\n') if len(resp.split('.')) > 1 and resp.split('.')[1].strip().isdigit()]
       if len(extracted_response) == 35:
           all_responses.append(extracted_response)
@@ -338,10 +340,16 @@ def ask_google(statement, country):
     prompt += f" {statement}\n"
     # print(prompt)
 
-    response = model.generate_content(prompt)
+    response = model.generate_content(prompt,
+        generation_config=genai.types.GenerationConfig(
+        temperature=2.0))
     extracted_response = response.text.lower().strip()
 
     return extracted_response
+
+x = ask_google("It upsets me when people use foul language like it is nothing.", "Argentina")
+
+x
 
 import os
 import csv
@@ -788,12 +796,15 @@ with open(csv_filename, 'a', newline='') as csvfile:
 print("Responses collected and saved to responses10.csv")
 
 #itembyitem Open AI
+import time
+
+def csv_file_exists(filename):
+    return os.path.exists(filename)
 
 csv_filename = 'openai_itembyitem.csv'
 
-countries = ["Argentina", "Belgium", "Chile", "Colombia", "Egypt", "France", "Ireland", "Japan", "Kenya", "Mexico", "Morocco", "New Zealand", "Nigeria"]
+countries = ["Argentina", "Belgium", "Chile", "Colombia", "Egypt", "France", "Ireland", "Japan", "Kenya", "Mexico", "Morocco", "New Zealand", "Nigeria", "Peru", "Russia", "Saudi Arabia", "South Africa", "Switzerland", "UAE", "Ghana", "Germany", "Italy", "Netherlands", "Spain", "UK", "Australia", "Canada", "USA", "Brazil", "South Korea", "Norway", "Sweden", "Iran", "India", "China", "Namibia", "Congo", "Turkey", "Poland"]
 
-#, "France", "Ireland", "Japan", "Kenya", "Mexico", "Morocco", "New Zealand", "Nigeria", "Peru", "Russia", "Saudi Arabia", "South Africa", "Switzerland", "UAE", "Ghana", "Germany", "Italy", "Netherlands", "Spain", "UK", "Australia", "Canada", "USA", "Brazil", "South Korea", "Norway", "Sweden", "Iran", "India", "China", "Namibia", "Congo", "Turkey", "Poland"
 
 statements = {
     "Caring": [
@@ -847,6 +858,7 @@ statements = {
 }
 
 def ask_openai(statements, country):
+    print(country)
     all_responses = []
     num_responses_needed = 10
 
@@ -860,7 +872,7 @@ def ask_openai(statements, country):
             )
 
             while len(statement_responses) < num_responses_needed:
-                time.sleep(10)
+                time.sleep(7)
 
 
                 response = client.chat.completions.create(
@@ -871,7 +883,8 @@ def ask_openai(statements, country):
                     }
                     ],
                     model="gpt-4",
-                    temperature=2
+                    temperature=2,
+                    max_tokens=10
                 )
 
                 responses = response.choices[0].message.content
@@ -881,6 +894,7 @@ def ask_openai(statements, country):
                 else:
                   statement_responses.append('na')
                   print(f"Unexpected response format: {responses}")
+            print(all_responses)
 
 
             all_responses.append(statement_responses)
@@ -996,7 +1010,9 @@ print(f"Data written to {csv_filename}")
 #     while len(all_responses) < 2:
 #       try:
 #           time.sleep(6)
-#           response = model.generate_content(prompt)
+#           response = model.generate_content(prompt,
+        # generation_config=genai.types.GenerationConfig(
+        # temperature=2.0))
 #           extracted_response = [
 #               resp.split('.')[1].strip()
 #               for resp in response.text.strip().split('\n')
@@ -1081,7 +1097,9 @@ def ask_google(statements, country):
             while len(statement_responses) < total_responses_needed:
                 try:
                     time.sleep(3)
-                    response = model.generate_content(prompt)
+                    response = model.generate_content(prompt,
+                    generation_config=genai.types.GenerationConfig(
+                    temperature=2.0))
                     extracted_response = response.text.strip()
 
                     if extracted_response.isdigit() and 1 <= int(extracted_response) <= 5:

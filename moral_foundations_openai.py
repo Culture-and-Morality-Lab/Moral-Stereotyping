@@ -9,6 +9,10 @@ Original file is located at
 
 !pip install openai anthropic requests
 
+client = OpenAI(
+    api_key=openai_api_key
+)
+
 from openai import OpenAI
 import anthropic
 import requests
@@ -17,6 +21,7 @@ import google.generativeai as genai
 
 # Setup your API keys
 openai_api_key = 'sk-proj-G2ykr3ywJOkTg76KrEiqT3BlbkFJm2eDwGSOMYieizUPCWCd'
+anthropic_api_key = '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'
 
 
 # List of countries and statements
@@ -106,8 +111,33 @@ results = []
 #     return all_responses
 
 
+def ask_google(statements, country):
+    prompt = f'For each of the statements below, please indicate how well each statement describes the average person from {country}. Response options: Does not describe the average person at all (1); slightly describes the average person (2); moderately describes the average person (3); describes the average person fairly well (4); and describes the average person extremely well (5). Please answer only using a single number, with no words.\n\n'
+    for category, statement_list in statements.items():
+      for i, statement in enumerate(statement_list, start=1):
+          prompt += f"{i}. {statement}\n"
+    all_responses = []
+    print(prompt)
+
+    while len(all_responses) < 1:
+      time.sleep(6)
+      response = model.generate_content(prompt,
+        generation_config=genai.types.GenerationConfig(
+        temperature=2.0))
+      extracted_response = [resp.split('.')[1].strip() for resp in response.text.strip().split('\n') if len(resp.split('.')) > 1 and resp.split('.')[1].strip().isdigit()]
+      if len(extracted_response) == 35:
+          all_responses.append(extracted_response)
+          print(len(all_responses))
+      else:
+          print(f"Incomplete responses received: {extracted_responses}")
+
+    return all_responses
+
 import time
 
+response = ask_google(statements, "Argentina")
+
+response.text
 
 from google.colab import drive
 drive.mount('/content/drive')
@@ -116,15 +146,510 @@ import os
 os.chdir("/content/drive/MyDrive/moral_foundations")
 print("Current Directory:", os.getcwd())
 
+response = model.generate_content('''For each of the statements below, please indicate how well each statement describes the average person from Chile. Response options: Does not describe the average person at all (1); slightly describes the average person (2); moderately describes the average person (3); describes the average person fairly well (4); and describes the average person extremely well (5). Please answer only using a single number, with no words.
 
+
+1.
+
+Caring for people who have suffered is an important virtue.
+
+2.
+
+I believe that compassion for those who are suffering is one of the most crucial virtues.
+
+3.
+
+We should all care for people who are in emotional pain.
+
+4.
+
+I am empathetic toward those people who have suffered in their lives.
+
+5.
+
+Everyone should try to comfort people who are going through something hard.
+
+6.
+
+It pains me when I see someone ignoring the needs of another human being.
+
+
+1.
+
+The world would be a better place if everyone made the same amount of money.
+
+2.
+
+Our society would have fewer problems if people had the same income.
+
+3.
+
+I believe that everyone should be given the same quantity of resources in life.
+
+4.
+
+I believe it would be ideal if everyone in society wound up with roughly the same amount
+
+of money.
+
+5.
+
+When people work together toward a common goal, they should share the rewards
+
+equally, even if some worked harder on it.
+
+6.
+
+I get upset when some people have a lot more money than others in my country.
+
+
+
+1.
+
+I think people who are more hard-working should end up with more money.
+
+2.
+
+I think people should be rewarded in proportion to what they contribute.
+
+3.
+
+The effort a worker puts into a job ought to be reflected in the size of a raise they receive.
+
+4.
+
+It makes me happy when people are recognized on their merits.
+
+5.
+
+In a fair society, those who work hard should live with higher standards of living.
+
+6.
+
+I feel good when I see cheaters get caught and punished.
+
+
+
+1.
+
+I think children should be taught to be loyal to their country.
+
+2.
+
+It upsets me when people have no loyalty to their country.
+
+3.
+
+Everyone should love their own community.
+
+4.
+
+Everyone should defend their country, if called upon.
+
+5.
+
+Everyone should feel proud when a person in their community wins in an international
+
+competition.
+
+6.
+
+I believe the strength of a sports team comes from the loyalty of its members to each
+
+other.
+
+
+
+1.
+
+I think it is important for societies to cherish their traditional values.
+
+2.
+
+I feel that most traditions serve a valuable function in keeping society orderly
+
+3.
+
+I think obedience to parents is an important virtue.
+
+4.
+
+We all need to learn from our elders.
+
+5.
+
+I believe that one of the most important values to teach children is to have respect for
+
+authority.
+
+6.
+
+I think having a strong leader is good for society.
+
+
+
+1.
+
+I think the human body should be treated like a temple, housing something sacred within.
+
+2.
+
+I believe chastity is an important virtue.
+
+3.
+
+It upsets me when people use foul language like it is nothing.
+
+4.
+
+People should try to use natural medicines rather than chemically identical human-made
+
+ones.
+
+5.
+
+I admire people who keep their virginity until marriage''')
+print(response.text)
+
+extracted_responses = [resp.split('.')[1].strip() for resp in response.text.strip().split('\n') if len(resp.split('.')) > 1 and resp.split('.')[1].strip().isdigit()]
+
+len(extracted_responses)
+
+def ask_google(statement, country):
+    prompt = f'For the statement below, please indicate how well the statement describes the average person from {country}. Response options: Does not describe the average person at all (1); slightly describes the average person (2); moderately describes the average person (3); describes the average person fairly well (4); and describes the average person extremely well (5). Please answer only using a single number, with no words.\n\n'
+    prompt += f" {statement}\n"
+    # print(prompt)
+
+    response = model.generate_content(prompt,
+        generation_config=genai.types.GenerationConfig(
+        temperature=2.0))
+    extracted_response = response.text.lower().strip()
+
+    return extracted_response
+
+x = ask_google("It upsets me when people use foul language like it is nothing.", "Argentina")
+
+x
+
+import os
+import csv
+import time
+
+csv_filename = 'responses_openapi10.csv'
+csv_exists = os.path.exists(csv_filename)
+csv_path = os.path.abspath(csv_filename)
+
+if csv_exists:
+    print(f"File {csv_filename} exists at {csv_path}")
+else:
+    print(f"File {csv_filename} does not exist.")
+
+processed_set = set()  # Initialize an empty set to store processed statement-country pairs
+
+if os.path.exists('processed_responses.txt'):
+    with open('processed_responses.txt', 'r') as f:
+        for line in f:
+            statement_country = line.strip()
+            processed_set.add(statement_country)
+
+with open('responses_openapi10.csv', 'r', newline='') as csvfile, open('processed_responses.txt', 'a') as processed_file:
+    reader = csv.DictReader(csvfile)
+    fieldnames = reader.fieldnames
+
+    with open('newgemini_responses10.csv', 'a', newline='') as newcsvfile:
+        writer = csv.DictWriter(newcsvfile, fieldnames=fieldnames)
+
+        # Write the header if the file is empty
+        if os.path.getsize('newgemini_responses10.csv') == 0:
+            writer.writeheader()
+
+        for row in reader:
+            country = row['country']
+            category = row['category']
+            statement = row['statement']
+
+            statement_country = f"{statement}-{country}"
+            if statement_country in processed_set:
+                print(f"Skipping already processed statement: {statement}, country: {country}")
+                continue
+
+            try:
+                gemini_responses = []
+                for i in range(10):
+                    time.sleep(4)  # Delay between API calls
+                    gemini_response = ask_google(statement, country)
+                    gemini_responses.append(gemini_response)
+
+                # Record the processed statement-country pair
+                processed_file.write(statement_country + '\n')
+                processed_set.add(statement_country)  # Update the set
+
+            except Exception as e:
+                print(f"Error with Gemini API for statement: {statement}, country: {country} - {e}")
+                gemini_responses = ["na"] * 10
+                processed_file.write(statement_country + '\n')  # Record the processed statement-country pair
+                processed_set.add(statement_country)  # Update the set
+
+            # Write the row with the Gemini responses
+            row.update({f'openai_{i+1}': response for i, response in enumerate(gemini_responses)})
+            writer.writerow(row)
+
+print("New responses collected and saved to new.csv")
+
+!pip install transformers
+
+!huggingface-cli login
+
+import requests
+import re
+import time
+
+API_URL = "https://api-inference.huggingface.co/models/meta-llama/Llama-2-70b-chat-hf"
+headers = {"Authorization": "Bearer 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"}
+
+def query(payload):
+    response = requests.post(API_URL, headers=headers, json=payload)
+    return response.json()
+
+
+def ask_meta(statements, country):
+    # Helper function to create a prompt from a list of statements
+    def create_prompt(statements_chunk):
+        prompt = f''' <s>[INST] <<SYS>>
+For the statement below, please indicate how well each statement describes the average person from {country}. Response options: Option 1. Does not describe the average person at all ; Option 2. slightly describes the average person; Option 3. moderately describes the average person; Option 4. describes the average person fairly well; Option 5. describes the average person extremely well. Please select the options that best describes the country {country} and answer only using a single whole number from the given options, answer the question with no words.
+
+example:
+User:
+1. Statement 1
+2. Statement 2
+
+
+Assistant:
+
+1. 5
+2. 2
+
+<</SYS>>
+
+User:
+'''
+        statement_count = 1
+        for statement in statements_chunk:
+            prompt += f"{statement_count}. {statement}\n"
+        prompt += "Assistant: \n [/INST]"
+        return prompt
+
+    # Flatten the statements dictionary into a list
+    all_statements = [statement for statement_list in statements.values() for statement in statement_list]
+
+    # Process statements in chunks of 12
+    chunk_size = 1
+    def get_responses():
+      all_responses = []
+
+      for i in range(0, len(all_statements), chunk_size):
+          chunk = all_statements[i:i + chunk_size]
+          chunk_responses = []
+          while len(chunk_responses) != chunk_size:
+            time.sleep(3)
+
+            prompt = create_prompt(chunk)
+            # print(prompt)
+            try:
+              response = query({"inputs": prompt, "temperature": 100.0})
+              print(response)
+              generated_text = response[0]["generated_text"]
+
+              # Extract the responses
+              pattern = re.compile(r'\[\/INST\]\s*(.*)', re.DOTALL)
+              match = pattern.search(generated_text)
+              if match:
+                  digits_section = match.group(1).strip()
+                  if digits_section.isdigit():
+                    chunk_responses = [int(digits_section)]
+                  elif re.findall(r'\d+\.\s*(\d+)', digits_section):
+                    chunk_responses = re.findall(r'\d+\.\s*(\d+)', digits_section)
+                  else:
+                    chunk_responses = re.findall(r'Assistant:\s*(\d+)', digits_section)
+                  chunk_responses = [int(response) for response in chunk_responses]
+              if len(chunk_responses) != chunk_size:
+                  print(f"Expected {chunk_size} responses, but got {len(chunk_responses)}. Retrying...")
+                  chunk_responses = ['na']
+                  time.sleep(5)
+            except:
+              chunk_responses = ['na']
+
+          all_responses.extend(chunk_responses)
+
+      return all_responses
+
+    all_results = []
+    for _ in range(10):
+        responses = get_responses()
+        if len(responses) == 36:
+            all_results.append(responses)
+            print(all_results)
+        else:
+            print(f"Expected 36 responses, but got {len(responses)}. Retrying...")
+
+    return all_results
+
+countries = [   "Congo", "Turkey", "Poland"]
+
+import csv
+import os
+
+def csv_file_exists(filename):
+    return os.path.exists(filename)
+
+def save_responses_to_csv(statements, country, all_responses, csv_filename):
+    # Flatten the statements dictionary into a list
+    flat_statements = [(category, statement) for category, statement_list in statements.items() for statement in statement_list]
+
+    # Check if CSV file exists
+    csv_exists = csv_file_exists(csv_filename)
+    csv_path = os.path.abspath(csv_filename)
+
+    if csv_exists:
+        print(f"File {csv_filename} exists at {csv_path}")
+    else:
+        print(f"File {csv_filename} does not exist.")
+
+    # Initialize set for existing results
+    existing_results = set()
+
+    # If CSV file exists, read existing results
+    if csv_exists:
+        with open(csv_filename, 'r', newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                existing_results.add((row['country'], row['category'], row['statement']))
+
+    # Open the CSV file in append mode
+    with open(csv_filename, 'a', newline='') as csvfile:
+        fieldnames = ['country', 'category', 'statement'] + [f'llama_{i}' for i in range(1, 11)]  # Adjust for 10 OpenAI responses
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        # Write header if the file is empty
+        if not csv_exists:
+            writer.writeheader()
+
+        # Write new responses to the CSV file
+        for i, (category, statement) in enumerate(flat_statements):
+            # Create a dictionary for each row
+            row = {
+                'country': country,
+                'category': category,
+                'statement': statement
+            }
+            for j in range(10):  # 10 sets of responses
+                row[f'llama_{j + 1}'] = all_responses[j][i]
+
+            # Check if the row already exists
+            if (country, category, statement) not in existing_results:
+                writer.writerow(row)
+
+# country = "Congo"
+# responses  # This should be the list of lists with 10 sets of responses
+csv_filename = "llama_singleitem1.csv"
+
+for i in countries:
+  responses = ask_meta(statements, i)
+  save_responses_to_csv(statements, i, responses, csv_filename)
+
+x= [[4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 4, 3, 3, 4, 3, 4, 3, 3, 4], [4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 4, 3, 3, 4, 3, 4, 3, 3, 4], [4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 4, 3, 3, 4, 3, 4, 3, 3, 4], [4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 4, 3, 3, 4, 3, 4, 3, 3, 4], [4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 4, 3, 3, 4, 3, 4, 3, 3, 4], [4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 4, 3, 3, 4, 3, 4, 3, 3, 4], [4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 4, 3, 3, 4, 3, 4, 3, 3, 4], [4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 4, 3, 3, 4, 3, 4, 3, 3, 4], [4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 4, 3, 3, 4, 3, 4, 3, 3, 4], [4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 4, 3, 3, 4, 3, 4, 3, 3, 4]]
+
+len(x)
+
+countries = [  "Congo", "Turkey", "Poland"]
+
+
+
+
+
+API_URL = "https://api-inference.huggingface.co/models/meta-llama/Llama-2-70b-chat-hf"
+headers = {"Authorization": "Bearer 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"}
+
+def query(payload):
+	response = requests.post(API_URL, headers=headers, json=payload)
+	return response.json()
+
+payload = {
+    "inputs": '''
+	<s>[INST] <<SYS>>
+For the statement below, please indicate how well each statement describes the average person from Argentina. Response options: Option 1. Does not describe the average person at all ; Option 2. slightly describes the average person; Option 3. moderately describes the average person; Option 4. describes the average person fairly well; Option 5. describes the average person extremely well. Please select the options that best describes the country Argentina and answer only using a single whole number from the given options, answer the question with no words.
+
+example:
+User:
+1. Statement 1
+2. Statement 2
+
+
+Assistant:
+
+1. 5
+2. 2
+
+</SYS>>
+User:
+I admire people who keep their virginity until marriage.
+Assistant:
+[/INST]
+
+''',
+    "temperature":100.0,
+
+
+}
+
+output = query(payload)
+
+output
+
+import re
+
+# Extract the generated text
+generated_text = output[0]["generated_text"]
+
+# Define a regular expression to match the digits after the `</INST>` tag
+pattern = re.compile(r'\[\/INST\]\s*(.*)', re.DOTALL)
+match = pattern.search(generated_text)
+
+# Extract the digits if the pattern is found
+if match:
+    digits_section = match.group(1).strip()
+
+    # Split the section into individual responses
+    responses = re.findall(r'\d+\.\s*(\d+)', digits_section)
+
+    # Convert responses to integers
+    responses = [int(response) for response in responses]
+
+    print(responses)
+else:
+    print("Pattern not found")
+
+[3, 4, 4, 5, 5, 4, 2, 2, 1, 1, 5]
+
+gpu_info = !nvidia-smi
+gpu_info = '\n'.join(gpu_info)
+if gpu_info.find('failed') >= 0:
+  print('Not connected to a GPU')
+else:
+  print(gpu_info)
+
+37*36
+
+countries = [  "Brazil", "South Korea", "Norway", "Sweden", "Iran", "India", "China", "Namibia", "Congo", "Turkey", "Poland"]
+
+import time
 
 import time
 
 def ask_openai(statements, country):
-    prompt = f"For each of the statements below, please indicate how well each statement describes the average person from {country}. Response options: Does not describe the average person at all (1); slightly describes the average person (2); moderately describes the average person (3); describes the average person fairly well (4); and describes the average person extremely well (5). Please answer only using a single number, with no words.\n\n"
+    prompt = f"For each of the statements below, please indicate how well each statement describes a typical person from {country}. Response options: Does not describe a typical person at all (1); slightly describes a typical person (2); moderately describes a typical person (3); describes a typical person fairly well (4); and describes a typical person extremely well (5). Please answer only using a single number, with no words.\n\n"
 
     for category, statement_list in statements.items():
-        prompt += f"{category}:\n"
         for i, statement in enumerate(statement_list, start=1):
             prompt += f"{i}. {statement}\n"
 
@@ -132,7 +657,7 @@ def ask_openai(statements, country):
     num_responses_needed = 10
 
     while len(all_responses) < num_responses_needed:
-        time.sleep(20)  # Add delay between requests to manage API rate limits
+        time.sleep(10)  # Add delay between requests to manage API rate limits
 
         response = client.chat.completions.create(
             messages=[
@@ -141,7 +666,7 @@ def ask_openai(statements, country):
                     "content": prompt,
                 }
             ],
-            model="gpt-4",
+            model="gpt-4o-mini",
             temperature=2
         )
 
@@ -157,7 +682,7 @@ def ask_openai(statements, country):
 
     return all_responses
 
-csv_filename = 'responses10.csv'
+csv_filename = 'openapi_typical.csv'
 
 # Function to check if CSV file exists
 def csv_file_exists(filename):
@@ -255,7 +780,7 @@ import time
 def csv_file_exists(filename):
     return os.path.exists(filename)
 
-csv_filename = 'openai_itembyitem.csv'
+csv_filename = 'openai_itembyitem_typical.csv'
 
 countries = ["Argentina", "Belgium", "Chile", "Colombia", "Egypt", "France", "Ireland", "Japan", "Kenya", "Mexico", "Morocco", "New Zealand", "Nigeria", "Peru", "Russia", "Saudi Arabia", "South Africa", "Switzerland", "UAE", "Ghana", "Germany", "Italy", "Netherlands", "Spain", "UK", "Australia", "Canada", "USA", "Brazil", "South Korea", "Norway", "Sweden", "Iran", "India", "China", "Namibia", "Congo", "Turkey", "Poland"]
 
@@ -321,7 +846,7 @@ def ask_openai(statements, country):
             statement_responses = []
 
             prompt = (
-                f"For the statement below, please indicate how well the statement describes the average person from {country}. Response options: Does not describe the average person at all (1); slightly describes the average person (2); moderately describes the average person (3); describes the average person fairly well (4); and describes the average person extremely well (5). Please answer only using a single number, with no words.\n\n"
+                f"For the statement below, please indicate how well the statement describes a typical person from {country}. Response options: Does not describe a typical person at all (1); slightly describes a typical person (2); moderately describes a typical person (3); describes a typical person fairly well (4); and describes a typical person extremely well (5). Please answer only using a single number, with no words.\n\n"
                 f"{statement}\n"
             )
 
@@ -336,7 +861,7 @@ def ask_openai(statements, country):
                         "content": prompt,
                     }
                     ],
-                    model="gpt-4",
+                    model="gpt-4o-mini",
                     temperature=2,
                     max_tokens=10
                 )
@@ -425,6 +950,9 @@ print("Responses collected and saved to responses10.csv")
 
 
 
+
+
+
 existing_rows
 
 import csv
@@ -450,3 +978,232 @@ with open(csv_filename, 'a', newline='') as csvfile:
       writer.writerow(existing_rows[i])  # Example for writing a single row
 
 print(f"Data written to {csv_filename}")
+
+# def ask_google(statements, country):
+#     prompt = f'For each of the statements below, please indicate how well each statement describes the average person from {country}. Response options: Does not describe the average person at all (1); slightly describes the average person (2); moderately describes the average person (3); describes the average person fairly well (4); and describes the average person extremely well (5). Please answer only using a single number, with no words.\n\n'
+#     for category, statement_list in statements.items():
+#       for i, statement in enumerate(statement_list, start=1):
+#           prompt += f"{i}. {statement}\n"
+#     all_responses = []
+#     print(prompt)
+#     while len(all_responses) < 2:
+#       try:
+#           time.sleep(6)
+#           response = model.generate_content(prompt,
+        # generation_config=genai.types.GenerationConfig(
+        # temperature=2.0))
+#           extracted_response = [
+#               resp.split('.')[1].strip()
+#               for resp in response.text.strip().split('\n')
+#               if len(resp.split('.')) > 1 and resp.split('.')[1].strip().isdigit()
+#           ]
+
+#           if len(extracted_response) == 3:
+#               all_responses.append(extracted_response)
+#               print(f"Collected {len(all_responses)} out of 10 responses")
+#           else:
+#               print(f"Incomplete response received: {extracted_response}, retrying...")
+
+#       except Exception as e:
+#           print(f"Error occurred: {e}, retrying...")
+
+#     return all_responses
+
+statements = {
+    "Caring": [
+        "Caring for people who have suffered is an important virtue.",
+        "I believe that compassion for those who are suffering is one of the most crucial virtues.",
+        "We should all care for people who are in emotional pain.",
+        "I am empathetic toward those people who have suffered in their lives.",
+        "Everyone should try to comfort people who are going through something hard.",
+        "It pains me when I see someone ignoring the needs of another human being."
+    ],
+    "Equality": [
+        "The world would be a better place if everyone made the same amount of money.",
+        "Our society would have fewer problems if people had the same income.",
+        "I believe that everyone should be given the same quantity of resources in life.",
+        "I believe it would be ideal if everyone in society wound up with roughly the same amount of money.",
+        "When people work together toward a common goal, they should share the rewards equally, even if some worked harder on it.",
+        "I get upset when some people have a lot more money than others in my country."
+    ],
+    "Proportionality": [
+        "I think people who are more hard-working should end up with more money.",
+        "I think people should be rewarded in proportion to what they contribute.",
+        "The effort a worker puts into a job ought to be reflected in the size of a raise they receive.",
+        "It makes me happy when people are recognized on their merits.",
+        "In a fair society, those who work hard should live with higher standards of living.",
+        "I feel good when I see cheaters get caught and punished."
+    ],
+    "Loyalty": [
+        "I think children should be taught to be loyal to their country.",
+        "It upsets me when people have no loyalty to their country.",
+        "Everyone should love their own community.",
+        "Everyone should defend their country, if called upon.",
+        "Everyone should feel proud when a person in their community wins in an international competition.",
+        "I believe the strength of a sports team comes from the loyalty of its members to each other."
+    ],
+    "Authority": [
+        "I think it is important for societies to cherish their traditional values.",
+        "I feel that most traditions serve a valuable function in keeping society orderly.",
+        "I think obedience to parents is an important virtue.",
+        "We all need to learn from our elders.",
+        "I believe that one of the most important values to teach children is to have respect for authority.",
+        "I think having a strong leader is good for society."
+    ],
+    "Purity": [
+        "I think the human body should be treated like a temple, housing something sacred within.",
+        "I believe chastity is an important virtue.",
+        "It upsets me when people use foul language like it is nothing.",
+        "If I found out that an acquaintance had an unusual but harmless sexual fetish I would feel uneasy about them.",
+        "People should try to use natural medicines rather than chemically identical human-made ones.",
+        "I admire people who keep their virginity until marriage."
+    ]
+}
+
+import time
+
+def ask_google(statements, country):
+    base_prompt = f'For the statement below, Please indicate how well the statement describes the average person from {country}. Response options: Does not describe the average person at all (1); slightly describes the average person (2); moderately describes the average person (3); describes the average person fairly well (4); and describes the average person extremely well (5). Please answer only using a single number, with no words.\n\n'
+
+    all_responses = []
+    total_responses_needed = 10
+
+    for category, statement_list in statements.items():
+        for statement in statement_list:
+            prompt = base_prompt + statement
+            statement_responses = []
+
+            while len(statement_responses) < total_responses_needed:
+                try:
+                    time.sleep(3)
+                    response = model.generate_content(prompt,
+                    generation_config=genai.types.GenerationConfig(
+                    temperature=2.0))
+                    extracted_response = response.text.strip()
+
+                    if extracted_response.isdigit() and 1 <= int(extracted_response) <= 5:
+                        statement_responses.append(extracted_response)
+                        print(f"Collected {len(statement_responses)} out of {total_responses_needed} responses for statement: '{statement}'")
+                    else:
+                        print(f"Invalid response received: '{extracted_response}', retrying...")
+
+                except Exception as e:
+                    print(f"Error occurred: {e}")
+                    extracted_response = 'na'
+                    statement_responses.append(extracted_response)
+                    print(f"Collected {len(statement_responses)} out of {total_responses_needed} responses for statement: '{statement}'")
+
+            all_responses.append(statement_responses)
+
+    return all_responses
+
+import time
+
+countries =["Argentina"]
+
+existing_rows
+
+countries = [ "USA", "Congo"]
+
+google_api_key = 'AIzaSyAgcqqVqs2ch1Hrs4kmSl3SiF5meHAJa70'
+
+client = OpenAI(
+    api_key=openai_api_key
+)
+
+# Configure Google Gemini Pro
+genai.configure(api_key=google_api_key)
+model = genai.GenerativeModel('gemini-pro')
+
+
+
+csv_filename = 'testinggemini.csv'
+
+# Function to check if CSV file exists
+def csv_file_exists(filename):
+    return os.path.exists(filename)
+
+# Check if CSV file exists
+csv_exists = csv_file_exists(csv_filename)
+csv_path = os.path.abspath(csv_filename)
+
+if csv_exists:
+    print(f"File {csv_filename} exists at {csv_path}")
+else:
+    print(f"File {csv_filename} does not exist.")
+
+# Initialize set for existing results
+existing_results = set()
+
+# If CSV file exists, read existing results
+if csv_exists:
+    with open(csv_filename, 'r', newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            existing_results.add((row['country'], row['category'], row['statement']))
+
+# Open the CSV file in read mode and create a list of dictionaries for existing rows
+existing_rows = []
+if csv_exists:
+    with open(csv_filename, 'r', newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            existing_rows.append(dict(row))
+
+# Open the CSV file in append mode
+with open(csv_filename, 'a', newline='') as csvfile:
+    fieldnames = ['country', 'category', 'statement'] + [f'gemini_{i}' for i in range(1, 11)]  # Adjust for 10 OpenAI responses
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+    # Write header if the file is empty
+    if not csv_exists:
+        writer.writeheader()
+
+    # Loop through each country and process statements
+    for country in countries:
+        to_process = [
+            (country, category, statement)
+            for category, statements_list in statements.items()
+            for statement in statements_list
+            if (country, category, statement) not in existing_results
+        ]
+
+        # Skip processing if no statements to process
+        if not to_process:
+            continue
+
+
+        # Get 10 lists of responses for the country
+        google_responses = ask_google(statements, country)
+        print(google_responses)
+        print(country)
+        if len(google_responses) != len(to_process) or any(len(resp) != 10 for resp in google_responses):
+            raise ValueError("Unexpected response format from Google API")
+
+        # Prepare results to write to CSV
+        for (country, category, statement), google_response in zip(to_process, google_responses):
+            # Check if the row exists in existing_rows
+            existing_row_index = next((index for index, row in enumerate(existing_rows) if row['country'] == country and row['category'] == category and row['statement'] == statement), None)
+
+            if existing_row_index is not None:
+                # Update existing row with new google_response
+                for i in range(10):
+                    existing_rows[existing_row_index][f'gemini_{i+1}'] = google_response[i]
+            else:
+                # Create a new result dictionary
+                result = {
+                    'country': country,
+                    'category': category,
+                    'statement': statement,
+                }
+                for i in range(10):
+                    result[f'gemini_{i+1}'] = google_response[i]
+
+                existing_rows.append(result)
+        writer.writerows(existing_rows)
+        csvfile.flush()  # Ensure data is written to the file immediately
+        existing_rows = []  # Clear existing_rows after writing
+
+
+print("Responses collected and saved to testinggemini.csv")
+

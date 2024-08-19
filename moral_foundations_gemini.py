@@ -9,18 +9,20 @@ Original file is located at
 
 !pip install openai anthropic requests
 
-google_api_key = 'AIzaSyDc2xTSyN-dFPbzGFiojqeTAkBrImDbkO4'
+from openai import OpenAI
+import anthropic
+import requests
+import csv
+import google.generativeai as genai
 
-client = OpenAI(
-    api_key=openai_api_key
-)
+google_api_key = 'AIzaSyCAsz-b-X8hZYZL96Ea1WCIrWWrMjocB_g'
 
 # Configure Google Gemini Pro
 genai.configure(api_key=google_api_key)
 model = genai.GenerativeModel('gemini-pro')
 
 # List of countries and statements
-countries = ["Argentina", "Belgium", "Chile", "Colombia", "Egypt", "France", "Ireland", "Japan", "Kenya", "Mexico", "Morocco", "New Zealand", "Nigeria", "Peru", "Russia", "Saudi Arabia", "South Africa", "Switzerland", "UAE", "Ghana", "Germany", "Italy", "Netherlands", "Spain", "UK", "Australia", "Canada", "USA", "Brazil", "South Korea", "Norway", "Sweden", "Iran", "India", "China", "Namibia", "Congo", "Turkey", "Poland"]
+countries = [ "Argentina", "Belgium", "Chile", "Colombia", "Egypt", "France", "Ireland", "Japan", "Kenya", "Mexico", "Morocco", "New Zealand", "Nigeria", "Peru", "Russia", "Saudi Arabia", "South Africa", "Switzerland", "UAE", "Ghana", "Germany", "Italy", "Netherlands", "Spain", "UK", "Australia", "Canada", "USA", "Brazil", "South Korea", "Norway", "Sweden", "Iran", "India", "China", "Namibia", "Congo", "Turkey", "Poland"]
 
 
 statements = {
@@ -68,7 +70,6 @@ statements = {
         "I think the human body should be treated like a temple, housing something sacred within.",
         "I believe chastity is an important virtue.",
         "It upsets me when people use foul language like it is nothing.",
-        "If I found out that an acquaintance had an unusual but harmless sexual fetish I would feel uneasy about them.",
         "People should try to use natural medicines rather than chemically identical human-made ones.",
         "I admire people who keep their virginity until marriage."
     ]
@@ -87,16 +88,16 @@ print("Current Directory:", os.getcwd())
 #itembyitem
 
 def ask_google(statement, country):
-    prompt = f'For the statement below, please indicate how well the statement describes the average person from {country}. Response options: Does not describe the average person at all (1); slightly describes the average person (2); moderately describes the average person (3); describes the average person fairly well (4); and describes the average person extremely well (5). Please answer only using a single number, with no words.\n\n'
+    prompt = f'For the statement below, please indicate how well the statement describes a typical person from {country}. Response options: Does not describe a typical person at all (1); slightly describes a typical person (2); moderately describes a typical person (3); describes a typical person fairly well (4); and describes a typical person extremely well (5). Please answer only using a single number, with no words.\n\n'
     prompt += f" {statement}\n"
     # print(prompt)
 
-    response = model.generate_content(prompt,
-        generation_config=genai.types.GenerationConfig(
-        temperature=2.0))
+    response = model.generate_content(prompt)
     extracted_response = response.text.lower().strip()
 
     return extracted_response
+
+countries = [ "UAE", "Ghana", "Germany", "Italy", "Netherlands", "Spain", "UK", "Australia", "Canada", "USA", "Brazil", "South Korea", "Norway", "Sweden", "Iran", "India", "China", "Namibia", "Congo", "Turkey", "Poland"]
 
 import os
 import csv
@@ -123,11 +124,11 @@ with open('responses_openapi10.csv', 'r', newline='') as csvfile, open('processe
     reader = csv.DictReader(csvfile)
     fieldnames = reader.fieldnames
 
-    with open('newgemini_responses10.csv', 'a', newline='') as newcsvfile:
+    with open('newgemini_item_typical.csv', 'a', newline='') as newcsvfile:
         writer = csv.DictWriter(newcsvfile, fieldnames=fieldnames)
 
         # Write the header if the file is empty
-        if os.path.getsize('newgemini_responses10.csv') == 0:
+        if os.path.getsize('newgemini_item_typical.csv') == 0:
             writer.writeheader()
 
         for row in reader:
@@ -140,52 +141,50 @@ with open('responses_openapi10.csv', 'r', newline='') as csvfile, open('processe
                 print(f"Skipping already processed statement: {statement}, country: {country}")
                 continue
 
-            try:
-                gemini_responses = []
-                for i in range(10):
-                    time.sleep(4)  # Delay between API calls
+            gemini_responses = []
+            for i in range(10):
+                try:
+                    time.sleep(3)  # Delay between API calls
                     gemini_response = ask_google(statement, country)
                     gemini_responses.append(gemini_response)
+                except Exception as e:
+                    print(f"Error with Gemini API for request {i+1} - statement: {statement}, country: {country} - {e}")
+                    gemini_responses.append("na")
 
-                # Record the processed statement-country pair
-                processed_file.write(statement_country + '\n')
-                processed_set.add(statement_country)  # Update the set
-
-            except Exception as e:
-                print(f"Error with Gemini API for statement: {statement}, country: {country} - {e}")
-                gemini_responses = ["na"] * 10
-                processed_file.write(statement_country + '\n')  # Record the processed statement-country pair
-                processed_set.add(statement_country)  # Update the set
+            # Record the processed statement-country pair
+            processed_file.write(statement_country + '\n')
+            processed_set.add(statement_country)  # Update the set
 
             # Write the row with the Gemini responses
             row.update({f'openai_{i+1}': response for i, response in enumerate(gemini_responses)})
             writer.writerow(row)
 
-print("New responses collected and saved to newgemini_responses10.csv")
+print("New responses collected and saved to newgemini_item_typical.csv")
 
 #Together
 
+countries = [   "Congo", "Turkey", "Poland"]
+
 def ask_google(statements, country):
-    prompt = f'For each of the statements below, please indicate how well each statement describes the average person from {country}. Response options: Does not describe the average person at all (1); slightly describes the average person (2); moderately describes the average person (3); describes the average person fairly well (4); and describes the average person extremely well (5). Please answer only using a single number, with no words.\n\n'
+    prompt = f'For each of the statements below, please indicate the mean description of a person from {country}. Response options: Does not describe the mean description of a person at all (1); slightly describes the mean description of a person (2); moderately describes the mean description of a person (3); describes the mean description of a person fairly well (4); and describes the mean description of a person extremely well (5). Please answer only using a single number, with no words.\n\n'
     for category, statement_list in statements.items():
       for i, statement in enumerate(statement_list, start=1):
           prompt += f"{i}. {statement}\n"
     all_responses = []
-    print(prompt)
-    while len(all_responses) < 2:
+    # print(prompt)
+    while len(all_responses) < 10:
       try:
           time.sleep(6)
-          response = model.generate_content(prompt,
-        generation_config=genai.types.GenerationConfig(
-        temperature=2.0))
+          response = model.generate_content(prompt)
           extracted_response = [
               resp.split('.')[1].strip()
               for resp in response.text.strip().split('\n')
               if len(resp.split('.')) > 1 and resp.split('.')[1].strip().isdigit()
           ]
 
-          if len(extracted_response) == 3:
+          if len(extracted_response) == 35:
               all_responses.append(extracted_response)
+              print(extracted_response)
               print(f"Collected {len(all_responses)} out of 10 responses")
           else:
               print(f"Incomplete response received: {extracted_response}, retrying...")
@@ -195,7 +194,9 @@ def ask_google(statements, country):
 
     return all_responses
 
-csv_filename = 'testinggemini.csv'
+import time
+
+csv_filename = 'mean_gemini_together.csv'
 
 # Function to check if CSV file exists
 def csv_file_exists(filename):
@@ -250,37 +251,39 @@ with open(csv_filename, 'a', newline='') as csvfile:
         if not to_process:
             continue
 
+        try:
+            # Get 10 lists of responses for the country
+            google_responses = ask_google(statements, country)
+            #print(google_responses)
+            if len(google_responses) != 10 or any(len(resp) != len(to_process) for resp in google_responses):
+              raise ValueError("Unexpected response format from gemini API")
 
-        # Get 10 lists of responses for the country
-        google_responses = ask_google(statements, country)
-        print(google_responses)
-        print(country)
-        if len(google_responses) != len(to_process) or any(len(resp) != 10 for resp in google_responses):
-            raise ValueError("Unexpected response format from Google API")
+            # Prepare results to write to CSV
+            for i in range(10):
+                for (country, category, statement), google_response in zip(to_process, google_responses[i]):
+                    # Check if the row exists in existing_rows
+                    existing_row_index = next((index for index, row in enumerate(existing_rows) if row['country'] == country and row['category'] == category and row['statement'] == statement), None)
 
-        # Prepare results to write to CSV
-        for (country, category, statement), google_response in zip(to_process, google_responses):
-            # Check if the row exists in existing_rows
-            existing_row_index = next((index for index, row in enumerate(existing_rows) if row['country'] == country and row['category'] == category and row['statement'] == statement), None)
+                    if existing_row_index is not None:
+                        # Update existing row with new google_response
+                        existing_rows[existing_row_index][f'gemini_{i+1}'] = google_response
+                    else:
+                        # Create a new result dictionary
+                        result = {
+                            'country': country,
+                            'category': category,
+                            'statement': statement,
+                        }
+                        result.update({f'gemini_{i+1}': google_response})  # Use i+1 to match column numbering (1-indexed)
 
-            if existing_row_index is not None:
-                # Update existing row with new google_response
-                for i in range(10):
-                    existing_rows[existing_row_index][f'gemini_{i+1}'] = google_response[i]
-            else:
-                # Create a new result dictionary
-                result = {
-                    'country': country,
-                    'category': category,
-                    'statement': statement,
-                }
-                for i in range(10):
-                    result[f'gemini_{i+1}'] = google_response[i]
+                        existing_rows.append(result)
+            writer.writerows(existing_rows)
+            csvfile.flush()  # Ensure data is written to the file immediately
+            existing_rows = []  # Clear existing_rows after writing
 
-                existing_rows.append(result)
-        writer.writerows(existing_rows)
-        csvfile.flush()  # Ensure data is written to the file immediately
-        existing_rows = []  # Clear existing_rows after writing
+        except Exception as e:
+            print(f"Error with gemini API for country: {country} - {e}")
+            google_responses = [["na"] * len(to_process)] * 10  # Handle error by filling with 'na' responses
 
 
-print("Responses collected and saved to testinggemini.csv")
+print("Responses collected and saved to typical_gemini_together.csv")
